@@ -30,13 +30,23 @@ async function initSidePanel() {
     }
 
     addLog(`Requesting extraction from ${tab[0].url.split('/').slice(0, 3).join('/')}`, 'info');
-    const response = await chrome.tabs.sendMessage(tab[0].id, { action: 'getExtraction' });
-    extraction = response.extraction;
 
-    if (extraction) {
-      addLog(`✓ Extraction found: ${extraction.platform}`, 'success');
-    } else {
-      addLog('No extraction found on this page', 'error');
+    try {
+      const response = await chrome.tabs.sendMessage(tab[0].id, { action: 'getExtraction' });
+      extraction = response.extraction;
+
+      if (extraction) {
+        addLog(`✓ Extraction found: ${extraction.platform}`, 'success');
+      } else {
+        addLog('No extraction found on this page', 'info');
+      }
+    } catch (e) {
+      if (e.message.includes('Receiving end does not exist')) {
+        addLog('Content script not loaded on this tab', 'info');
+        addLog('Visit a creator profile page (e.g., @username) to extract data', 'info');
+      } else {
+        throw e;
+      }
     }
 
     renderSidePanel();
