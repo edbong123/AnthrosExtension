@@ -150,7 +150,8 @@ function extractJsonScript(config) {
       if (config.scriptClean) {
         content = content.replace(config.scriptClean, '');
       }
-      const data = JSON.parse(content);
+      const jsonStr = extractJsonObject(content);
+      const data = JSON.parse(jsonStr);
       log('Parsed JSON from script', { keys: Object.keys(data).slice(0, 3) });
       return extractFields(data, config.fields);
     } catch (e) {
@@ -159,6 +160,44 @@ function extractJsonScript(config) {
     }
   }
   return null;
+}
+
+function extractJsonObject(content) {
+  const trimmed = content.trimStart();
+  const firstChar = trimmed[0];
+  if (firstChar !== '{' && firstChar !== '[') {
+    return trimmed;
+  }
+  const openChar = firstChar;
+  const closeChar = openChar === '{' ? '}' : ']';
+  let depth = 0;
+  let inString = false;
+  let escape = false;
+
+  for (let i = 0; i < trimmed.length; i++) {
+    const ch = trimmed[i];
+    if (escape) {
+      escape = false;
+      continue;
+    }
+    if (ch === '\\') {
+      escape = true;
+      continue;
+    }
+    if (ch === '"') {
+      inString = !inString;
+      continue;
+    }
+    if (inString) continue;
+    if (ch === openChar) depth++;
+    else if (ch === closeChar) {
+      depth--;
+      if (depth === 0) {
+        return trimmed.slice(0, i + 1);
+      }
+    }
+  }
+  return trimmed;
 }
 
 function extractFields(data, fields) {
