@@ -281,4 +281,24 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   }
 });
 
+let lastUrl = window.location.href;
+function watchForUrlChanges() {
+  const observer = new MutationObserver(() => {
+    if (window.location.href !== lastUrl) {
+      lastUrl = window.location.href;
+      log('URL changed, re-running extraction');
+      currentExtraction = null;
+      setTimeout(() => initializeExtraction(), 1500);
+    }
+  });
+  if (document.body) {
+    observer.observe(document.body, { childList: true, subtree: true });
+  } else {
+    document.addEventListener('DOMContentLoaded', () => {
+      observer.observe(document.body, { childList: true, subtree: true });
+    });
+  }
+}
+
+watchForUrlChanges();
 initializeExtraction();
