@@ -95,6 +95,11 @@ async function getConfig() {
       const cached = platforms[entry.id];
       const age = Date.now() - (cached?.cachedAt ?? 0);
       if (!cached || age > ttl) {
+        if (!entry.url) {
+          log(`No URL for platform ${entry.id}, using embedded config`);
+          platforms[entry.id] = EMBEDDED_PLATFORMS[entry.id];
+          continue;
+        }
         try {
           log(`Fetching platform config: ${entry.id}`);
           const res = await fetch(entry.url, { cache: 'no-store' });
