@@ -1,0 +1,33 @@
+{
+  "manifest_version": 3,
+  "name": "Anthros Creator Saver",
+  "version": "1.0.0",
+  "description": "Save creator profiles from social platforms directly to Anthros",
+  "permissions": ["activeTab", "storage", "scripting"],
+  "host_permissions": [
+    "https://www.instagram.com/*",
+    "https://www.tiktok.com/*",
+    "https://www.youtube.com/*",
+    "https://www.facebook.com/*",
+    "https://raw.githubusercontent.com/*"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "action": {
+    "default_popup": "popup/popup.html",
+    "default_title": "Anthros Creator Saver"
+  },
+  "options_page": "options/options.html",
+  "content_scripts": [
+    {
+      "matches": [
+        "https://www.instagram.com/*",
+        "https://www.tiktok.com/*",
+        "https://www.youtube.com/*",
+        "https://www.facebook.com/*"
+      ],
+      "js": ["content/injector.js"]
+    }
+  ]
+}
