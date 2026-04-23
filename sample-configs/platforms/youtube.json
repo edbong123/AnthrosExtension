@@ -1,7 +1,7 @@
 {
   "id": "youtube",
   "label": "YouTube",
-  "version": 2,
+  "version": 3,
   "hostMatch": "youtube.com",
   "profileUrlPattern": "youtube.com/@",
   "type": "json_script",
@@ -11,10 +11,7 @@
   "fields": {
     "username": "header.c4TabbedHeaderRenderer.channelHandleText.runs.0.text",
     "displayName": "header.c4TabbedHeaderRenderer.title.runs.0.text",
-    "bio": "header.c4TabbedHeaderRenderer.tagline.runs.0.text",
     "subscribers": "header.c4TabbedHeaderRenderer.subscriberCountText.simpleText",
-    "videoCount": "header.c4TabbedHeaderRenderer.videosCountText.runs.0.text",
-    "profileImage": "header.c4TabbedHeaderRenderer.avatar.thumbnails.0.url",
-    "verified": "header.c4TabbedHeaderRenderer.subtitleBadges.0.subtitleBadgeRenderer.tooltip"
+    "videoCount": "header.c4TabbedHeaderRenderer.videosCountText.runs.0.text"
   }
 }
