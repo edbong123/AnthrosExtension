@@ -1,16 +1,14 @@
 {
   "id": "facebook",
   "label": "Facebook",
-  "version": 1,
+  "version": 2,
   "hostMatch": "facebook.com",
   "profileUrlPattern": "facebook.com/",
   "type": "dom",
   "selectors": {
-    "displayName": "h1 span",
-    "profileImage": "img[alt*='profile picture']"
-  },
-  "fields": {
-    "displayName": "displayName",
-    "profileImage": "profileImage"
+    "displayName": "h1",
+    "friendsCount": "a[href*='friends_all'] span",
+    "mutualFriends": "a[href*='friends_mutual'] span",
+    "location": "span[data-content*='Lives in'], span[data-tooltip*='Lives in']"
   }
 }

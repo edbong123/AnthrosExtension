@@ -69,6 +69,29 @@ async function getConfig() {
   return { index, platforms };
 }
 
+function extractDom(config) {
+  const result = {};
+  for (const [fieldName, selectorOrFn] of Object.entries(config.selectors || {})) {
+    result[fieldName] = null;
+
+    if (typeof selectorOrFn === 'string') {
+      const element = document.querySelector(selectorOrFn);
+      if (element) {
+        result[fieldName] = element.innerText?.trim() || element.getAttribute('src') || element.getAttribute('href');
+      }
+    } else if (typeof selectorOrFn === 'function') {
+      try {
+        result[fieldName] = selectorOrFn();
+      } catch (e) {
+        log(`Error in custom selector for ${fieldName}:`, e.message);
+      }
+    }
+  }
+  const found = Object.values(result).filter(v => v !== null).length;
+  log(`Extracted ${found}/${Object.keys(config.selectors || {}).length} fields from DOM`);
+  return result;
+}
+
 function extractJsonScript(config) {
   let scripts;
   if (config.scriptId) {
@@ -137,7 +160,18 @@ function matchesUrl(pattern, url) {
 }
 
 async function runExtraction(config) {
-  if (config.type === 'json_script') {
+  if (config.type === 'dom') {
+    const data = extractDom(config);
+    if (data && Object.values(data).some(v => v !== null)) {
+      return {
+        platform: config.id,
+        platformLabel: config.label,
+        configVersion: config.version,
+        profileUrl: window.location.href,
+        ...data
+      };
+    }
+  } else if (config.type === 'json_script') {
     const data = extractJsonScript(config);
     if (data) {
       return {
@@ -192,7 +226,16 @@ async function initializeExtraction() {
 
     log(`Found matching platform: ${entry.id} (${config.label})`);
 
-    if (config.type === 'json_script') {
+    if (config.type === 'dom') {
+      const result = await runExtraction(config);
+      if (result) {
+        currentExtraction = result;
+        log('Extraction successful', { fields: Object.keys(result) });
+        break;
+      } else {
+        log('dom extraction failed');
+      }
+    } else if (config.type === 'json_script') {
       const result = await runExtraction(config);
       if (result) {
         currentExtraction = result;
