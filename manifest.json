@@ -9,6 +9,8 @@
     "https://www.tiktok.com/*",
     "https://www.youtube.com/*",
     "https://www.facebook.com/*",
+    "https://open.spotify.com/*",
+    "https://api-partner.spotify.com/*",
     "https://raw.githubusercontent.com/*"
   ],
   "background": {
@@ -27,7 +29,8 @@
         "https://www.instagram.com/*",
         "https://www.tiktok.com/*",
         "https://www.youtube.com/*",
-        "https://www.facebook.com/*"
+        "https://www.facebook.com/*",
+        "https://open.spotify.com/*"
       ],
       "js": ["content/injector.js"]
     }
