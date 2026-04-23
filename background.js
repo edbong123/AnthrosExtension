@@ -1,8 +1,15 @@
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.action === 'saveCreator') {
-    saveCreatorProfile(request.data).then(sendResponse).catch(err => {
-      sendResponse({ error: err.message });
-    });
+    console.log('[Anthros BG] Saving creator:', request.data.platform);
+    saveCreatorProfile(request.data)
+      .then(result => {
+        console.log('[Anthros BG] Save successful:', result);
+        sendResponse(result);
+      })
+      .catch(err => {
+        console.error('[Anthros BG] Save failed:', err);
+        sendResponse({ error: err.message });
+      });
     return true;
   }
 });
@@ -12,8 +19,13 @@ async function saveCreatorProfile(data) {
   const convexUrl = storage.convexUrl;
 
   if (!convexUrl) {
-    throw new Error('Convex URL not configured');
+    throw new Error('Convex URL not configured in extension settings');
   }
+
+  const standardFields = [
+    'platform', 'profileUrl', 'username', 'displayName', 'bio',
+    'followers', 'verified', 'configVersion', 'platformLabel'
+  ];
 
   const payload = {
     platform: data.platform,
@@ -25,17 +37,16 @@ async function saveCreatorProfile(data) {
     verified: data.verified || null,
     scrapedAt: new Date().toISOString(),
     source: 'chrome_extension',
-    configVersion: data.configVersion,
-    ...Object.fromEntries(
-      Object.entries(data).filter(([k]) =>
-        ![
-          'platform', 'profileUrl', 'username', 'displayName', 'bio',
-          'followers', 'verified', 'configVersion', 'platformLabel'
-        ].includes(k)
-      )
-    )
+    configVersion: data.configVersion
   };
 
+  for (const [key, value] of Object.entries(data)) {
+    if (!standardFields.includes(key) && value !== null && value !== undefined) {
+      payload[key] = value;
+    }
+  }
+
+  console.log('[Anthros BG] POSTing to:', convexUrl);
   const response = await fetch(`${convexUrl}/save-creator`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -43,7 +54,8 @@ async function saveCreatorProfile(data) {
   });
 
   if (!response.ok) {
-    throw new Error(`HTTP ${response.status}`);
+    const text = await response.text();
+    throw new Error(`Convex HTTP ${response.status}: ${text}`);
   }
 
   return await response.json();

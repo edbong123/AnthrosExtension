@@ -1,0 +1,29 @@
+{
+  "version": 1,
+  "platforms": [
+    {
+      "id": "tiktok",
+      "label": "TikTok",
+      "url": "https://raw.githubusercontent.com/yourorg/anthros-scraper-configs/main/platforms/tiktok.json",
+      "active": true
+    },
+    {
+      "id": "youtube",
+      "label": "YouTube",
+      "url": "https://raw.githubusercontent.com/yourorg/anthros-scraper-configs/main/platforms/youtube.json",
+      "active": true
+    },
+    {
+      "id": "instagram",
+      "label": "Instagram",
+      "url": "https://raw.githubusercontent.com/yourorg/anthros-scraper-configs/main/platforms/instagram.json",
+      "active": true
+    },
+    {
+      "id": "facebook",
+      "label": "Facebook",
+      "url": "https://raw.githubusercontent.com/yourorg/anthros-scraper-configs/main/platforms/facebook.json",
+      "active": false
+    }
+  ]
+}

@@ -1,0 +1,16 @@
+{
+  "id": "facebook",
+  "label": "Facebook",
+  "version": 1,
+  "hostMatch": "facebook.com",
+  "profileUrlPattern": "facebook.com/",
+  "type": "dom",
+  "selectors": {
+    "displayName": "h1 span",
+    "profileImage": "img[alt*='profile picture']"
+  },
+  "fields": {
+    "displayName": "displayName",
+    "profileImage": "profileImage"
+  }
+}

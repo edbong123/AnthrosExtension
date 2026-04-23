@@ -1,0 +1,21 @@
+{
+  "id": "instagram",
+  "label": "Instagram",
+  "version": 7,
+  "hostMatch": "instagram.com",
+  "profileUrlPattern": "instagram.com/",
+  "type": "xhr_intercept",
+  "urlMatch": "/api/v1/users/web_profile_info/",
+  "fields": {
+    "username": "data.user.username",
+    "displayName": "data.user.full_name",
+    "bio": "data.user.biography",
+    "bio_links": "data.user.bio_links",
+    "followers": "data.user.edge_followed_by.count",
+    "following": "data.user.edge_follow.count",
+    "profileImage": "data.user.profile_pic_url_hd",
+    "verified": "data.user.is_verified",
+    "business_category": "data.user.category_name",
+    "is_business": "data.user.is_professional_account"
+  }
+}

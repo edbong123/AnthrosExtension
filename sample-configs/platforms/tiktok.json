@@ -1,0 +1,20 @@
+{
+  "id": "tiktok",
+  "label": "TikTok",
+  "version": 3,
+  "hostMatch": "tiktok.com",
+  "profileUrlPattern": "tiktok.com/@",
+  "type": "json_script",
+  "scriptId": "__UNIVERSAL_DATA_FOR_REHYDRATION__",
+  "fields": {
+    "username": "__DEFAULT_SCOPE__.webapp.user-detail.userInfo.user.uniqueId",
+    "displayName": "__DEFAULT_SCOPE__.webapp.user-detail.userInfo.user.nickname",
+    "bio": "__DEFAULT_SCOPE__.webapp.user-detail.userInfo.user.signature",
+    "followers": "__DEFAULT_SCOPE__.webapp.user-detail.userInfo.stats.followerCount",
+    "following": "__DEFAULT_SCOPE__.webapp.user-detail.userInfo.stats.followingCount",
+    "videoCount": "__DEFAULT_SCOPE__.webapp.user-detail.userInfo.stats.videoCount",
+    "heartCount": "__DEFAULT_SCOPE__.webapp.user-detail.userInfo.stats.heartCount",
+    "verified": "__DEFAULT_SCOPE__.webapp.user-detail.userInfo.user.verified",
+    "profileImage": "__DEFAULT_SCOPE__.webapp.user-detail.userInfo.user.avatarMedium"
+  }
+}

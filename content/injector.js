@@ -1,11 +1,28 @@
 let currentExtraction = null;
-let xhrInterceptCallback = null;
+let xhrInterceptCallbacks = [];
+
+const DEBUG = true;
+
+function log(msg, data) {
+  if (DEBUG) {
+    if (data !== undefined) {
+      console.log(`[Anthros] ${msg}`, data);
+    } else {
+      console.log(`[Anthros] ${msg}`);
+    }
+  }
+}
 
 async function getConfig() {
   const storage = await chrome.storage.sync.get([
     'configIndexUrl', 'githubPat', 'cacheTtlMinutes',
     'index', 'indexCachedAt', 'platforms'
   ]);
+
+  if (!storage.configIndexUrl) {
+    log('Config index URL not set');
+    return { index: null, platforms: {} };
+  }
 
   const ttl = (storage.cacheTtlMinutes ?? 60) * 60 * 1000;
   const headers = storage.githubPat
@@ -17,14 +34,18 @@ async function getConfig() {
 
   if (!index || indexAge > ttl) {
     try {
-      const res = await fetch(storage.configIndexUrl, { headers });
+      log('Fetching fresh index from', storage.configIndexUrl);
+      const res = await fetch(storage.configIndexUrl, { headers, cache: 'no-store' });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       index = await res.json();
       await chrome.storage.sync.set({ index, indexCachedAt: Date.now() });
+      log('Index fetched successfully, platforms:', index.platforms.length);
     } catch (e) {
-      console.error('Failed to fetch index:', e);
+      log('Failed to fetch index:', e.message);
       return { index: storage.index, platforms: storage.platforms ?? {} };
     }
+  } else {
+    log('Using cached index');
   }
 
   const platforms = storage.platforms ?? {};
@@ -33,13 +54,17 @@ async function getConfig() {
     const age = Date.now() - (cached?.cachedAt ?? 0);
     if (!cached || age > ttl) {
       try {
-        const res = await fetch(entry.url, { headers });
+        log(`Fetching platform config: ${entry.id}`);
+        const res = await fetch(entry.url, { headers, cache: 'no-store' });
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const config = await res.json();
         platforms[entry.id] = { ...config, cachedAt: Date.now() };
+        log(`Platform ${entry.id} loaded (v${config.version})`);
       } catch (e) {
-        console.error(`Failed to fetch platform ${entry.id}:`, e);
+        log(`Failed to fetch platform ${entry.id}:`, e.message);
       }
+    } else {
+      log(`Using cached platform: ${entry.id}`);
     }
   }
 
@@ -51,8 +76,19 @@ function extractJsonScript(config) {
   let scripts;
   if (config.scriptId) {
     const script = document.getElementById(config.scriptId);
-    if (!script) return null;
+    if (!script) {
+      log(`Script with ID ${config.scriptId} not found`);
+      return null;
+    }
     scripts = [script];
+  } else if (config.scriptMatch) {
+    scripts = Array.from(document.querySelectorAll('script')).filter(s => {
+      return s.textContent && s.textContent.includes(config.scriptMatch);
+    });
+    if (scripts.length === 0) {
+      log(`No script found matching: ${config.scriptMatch}`);
+      return null;
+    }
   } else {
     scripts = Array.from(document.querySelectorAll('script[type="application/json"]'));
   }
@@ -64,8 +100,10 @@ function extractJsonScript(config) {
         content = content.replace(config.scriptClean, '');
       }
       const data = JSON.parse(content);
+      log('Parsed JSON from script', { keys: Object.keys(data).slice(0, 3) });
       return extractFields(data, config.fields);
     } catch (e) {
+      log(`Failed to parse script content: ${e.message}`);
       continue;
     }
   }
@@ -75,15 +113,24 @@ function extractJsonScript(config) {
 function extractFields(data, fields) {
   const result = {};
   for (const [fieldName, path] of Object.entries(fields)) {
-    result[fieldName] = resolvePath(data, path) ?? null;
+    const value = resolvePath(data, path);
+    result[fieldName] = value ?? null;
   }
+  const found = Object.values(result).filter(v => v !== null).length;
+  log(`Extracted ${found}/${Object.keys(fields).length} fields`);
   return result;
 }
 
 function resolvePath(obj, path) {
+  if (!path || typeof path !== 'string') return undefined;
   return path.split('.').reduce((acc, key) => {
     if (acc === null || acc === undefined) return undefined;
-    return isNaN(key) ? acc[key] : acc[parseInt(key)];
+    if (isNaN(key)) {
+      return acc[key];
+    } else {
+      const idx = parseInt(key);
+      return Array.isArray(acc) ? acc[idx] : undefined;
+    }
   }, obj);
 }
 
@@ -125,25 +172,43 @@ async function runExtraction(config) {
 }
 
 async function initializeExtraction() {
+  log('Initializing extraction for', window.location.href);
   const { index, platforms } = await getConfig();
-  if (!index || !index.platforms) return;
+  if (!index || !index.platforms) {
+    log('No index or platforms available');
+    return;
+  }
 
   for (const entry of index.platforms.filter(p => p.active)) {
     const config = platforms[entry.id];
-    if (!config) continue;
+    if (!config) {
+      log(`Platform ${entry.id} in index but config not loaded`);
+      continue;
+    }
 
-    if (!matchesUrl(config.hostMatch, window.location.href)) continue;
-    if (!matchesUrl(config.profileUrlPattern, window.location.href)) continue;
+    if (!matchesUrl(config.hostMatch, window.location.href)) {
+      continue;
+    }
+    if (!matchesUrl(config.profileUrlPattern, window.location.href)) {
+      continue;
+    }
+
+    log(`Found matching platform: ${entry.id} (${config.label})`);
 
     if (config.type === 'json_script') {
       const result = await runExtraction(config);
       if (result) {
         currentExtraction = result;
+        log('Extraction successful', { fields: Object.keys(result) });
         break;
+      } else {
+        log('json_script extraction failed');
       }
     } else if (config.type === 'xhr_intercept') {
+      log('Setting up XHR interception');
       setupXhrInterception((captured) => {
         if (matchesUrl(config.urlMatch, captured.url)) {
+          log('XHR matched, extracting fields');
           const data = extractFields(captured.response, config.fields);
           currentExtraction = {
             platform: config.id,
@@ -152,6 +217,7 @@ async function initializeExtraction() {
             profileUrl: window.location.href,
             ...data
           };
+          log('XHR extraction successful', { fields: Object.keys(data) });
         }
       });
     }

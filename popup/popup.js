@@ -1,11 +1,25 @@
 let extraction = null;
 
 async function initPopup() {
-  const tab = await chrome.tabs.query({ active: true, currentWindow: true });
-  const response = await chrome.tabs.sendMessage(tab[0].id, { action: 'getExtraction' });
-  extraction = response.extraction;
+  try {
+    const tab = await chrome.tabs.query({ active: true, currentWindow: true });
+    if (!tab || !tab[0]) {
+      showError('Could not get active tab');
+      return;
+    }
+    const response = await chrome.tabs.sendMessage(tab[0].id, { action: 'getExtraction' });
+    extraction = response.extraction;
+    renderPopup();
+  } catch (e) {
+    console.error('[Anthros Popup] Init failed:', e);
+    showError(e.message);
+  }
+}
 
-  renderPopup();
+function showError(msg) {
+  const statusDiv = document.getElementById('status');
+  statusDiv.innerHTML = `<div class="status error">${msg}</div>`;
+  document.getElementById('saveBtn').disabled = true;
 }
 
 function renderPopup() {
