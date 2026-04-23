@@ -105,6 +105,9 @@ function extractDom(config) {
       const element = document.querySelector(selectorOrFn);
       if (element) {
         result[fieldName] = element.innerText?.trim() || element.getAttribute('src') || element.getAttribute('href');
+        log(`Found ${fieldName}: "${result[fieldName]?.substring(0, 50)}"`);
+      } else {
+        log(`Selector not found for ${fieldName}: "${selectorOrFn}"`);
       }
     } else if (typeof selectorOrFn === 'function') {
       try {
@@ -260,6 +263,9 @@ async function initializeExtraction() {
     return;
   }
 
+  const url = window.location.href;
+  log('Checking platforms:', index.platforms.map(p => `${p.id}(${p.active ? 'active' : 'inactive'})`));
+
   for (const entry of index.platforms.filter(p => p.active)) {
     const config = platforms[entry.id];
     if (!config) {
@@ -267,10 +273,15 @@ async function initializeExtraction() {
       continue;
     }
 
-    if (!matchesUrl(config.hostMatch, window.location.href)) {
+    const hostMatches = matchesUrl(config.hostMatch, url);
+    const profileMatches = matchesUrl(config.profileUrlPattern, url);
+
+    log(`Checking ${entry.id}: hostMatch="${config.hostMatch}" (${hostMatches}), profilePattern="${config.profileUrlPattern}" (${profileMatches})`);
+
+    if (!hostMatches) {
       continue;
     }
-    if (!matchesUrl(config.profileUrlPattern, window.location.href)) {
+    if (!profileMatches) {
       continue;
     }
 
