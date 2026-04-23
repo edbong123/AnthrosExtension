@@ -19,9 +19,13 @@ async function getConfig() {
     'index', 'indexCachedAt', 'platforms'
   ]);
 
-  if (!storage.configIndexUrl) {
-    log('Config index URL not set');
-    return { index: null, platforms: {} };
+  const configIndexUrl = storage.configIndexUrl ||
+    'https://raw.githubusercontent.com/edbong123/anthrosextension/main/sample-configs/index.json';
+
+  if (storage.configIndexUrl) {
+    log('Using configured index URL');
+  } else {
+    log('Using default sample configs');
   }
 
   const ttl = (storage.cacheTtlMinutes ?? 60) * 60 * 1000;
@@ -31,8 +35,8 @@ async function getConfig() {
 
   if (!index || indexAge > ttl) {
     try {
-      log('Fetching fresh index from', storage.configIndexUrl);
-      const res = await fetch(storage.configIndexUrl, { cache: 'no-store' });
+      log('Fetching fresh index from', configIndexUrl);
+      const res = await fetch(configIndexUrl, { cache: 'no-store' });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       index = await res.json();
       await chrome.storage.sync.set({ index, indexCachedAt: Date.now() });
