@@ -19,53 +19,58 @@ async function getConfig() {
     'index', 'indexCachedAt', 'platforms'
   ]);
 
-  const configIndexUrl = storage.configIndexUrl ||
-    'https://raw.githubusercontent.com/edbong123/anthrosextension/main/sample-configs/index.json';
-
-  if (storage.configIndexUrl) {
-    log('Using configured index URL');
-  } else {
-    log('Using default sample configs');
-  }
-
+  const configIndexUrl = storage.configIndexUrl;
   const ttl = (storage.cacheTtlMinutes ?? 60) * 60 * 1000;
 
-  let index = storage.index;
-  const indexAge = Date.now() - (storage.indexCachedAt ?? 0);
+  let index;
+  let platforms = storage.platforms ?? {};
 
-  if (!index || indexAge > ttl) {
-    try {
-      log('Fetching fresh index from', configIndexUrl);
-      const res = await fetch(configIndexUrl, { cache: 'no-store' });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      index = await res.json();
-      await chrome.storage.sync.set({ index, indexCachedAt: Date.now() });
-      log('Index fetched successfully, platforms:', index.platforms.length);
-    } catch (e) {
-      log('Failed to fetch index:', e.message);
-      return { index: storage.index, platforms: storage.platforms ?? {} };
-    }
-  } else {
-    log('Using cached index');
-  }
+  if (configIndexUrl) {
+    log('Using configured index URL');
+    const indexAge = Date.now() - (storage.indexCachedAt ?? 0);
 
-  const platforms = storage.platforms ?? {};
-  for (const entry of (index?.platforms ?? []).filter(p => p.active)) {
-    const cached = platforms[entry.id];
-    const age = Date.now() - (cached?.cachedAt ?? 0);
-    if (!cached || age > ttl) {
+    if (!storage.index || indexAge > ttl) {
       try {
-        log(`Fetching platform config: ${entry.id}`);
-        const res = await fetch(entry.url, { cache: 'no-store' });
+        log('Fetching fresh index from', configIndexUrl);
+        const res = await fetch(configIndexUrl, { cache: 'no-store' });
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        const config = await res.json();
-        platforms[entry.id] = { ...config, cachedAt: Date.now() };
-        log(`Platform ${entry.id} loaded (v${config.version})`);
+        index = await res.json();
+        await chrome.storage.sync.set({ index, indexCachedAt: Date.now() });
+        log('Index fetched successfully, platforms:', index.platforms.length);
       } catch (e) {
-        log(`Failed to fetch platform ${entry.id}:`, e.message);
+        log('Failed to fetch index:', e.message);
+        index = storage.index || EMBEDDED_INDEX;
       }
     } else {
-      log(`Using cached platform: ${entry.id}`);
+      log('Using cached index');
+      index = storage.index;
+    }
+
+    for (const entry of (index?.platforms ?? []).filter(p => p.active)) {
+      const cached = platforms[entry.id];
+      const age = Date.now() - (cached?.cachedAt ?? 0);
+      if (!cached || age > ttl) {
+        try {
+          log(`Fetching platform config: ${entry.id}`);
+          const res = await fetch(entry.url, { cache: 'no-store' });
+          if (!res.ok) throw new Error(`HTTP ${res.status}`);
+          const config = await res.json();
+          platforms[entry.id] = { ...config, cachedAt: Date.now() };
+          log(`Platform ${entry.id} loaded (v${config.version})`);
+        } catch (e) {
+          log(`Failed to fetch platform ${entry.id}:`, e.message);
+          platforms[entry.id] = EMBEDDED_PLATFORMS[entry.id];
+        }
+      } else {
+        log(`Using cached platform: ${entry.id}`);
+      }
+    }
+  } else {
+    log('Using embedded configs');
+    index = EMBEDDED_INDEX;
+    for (const entry of (index?.platforms ?? []).filter(p => p.active)) {
+      platforms[entry.id] = EMBEDDED_PLATFORMS[entry.id];
+      log(`Loaded embedded platform: ${entry.id}`);
     }
   }
 
