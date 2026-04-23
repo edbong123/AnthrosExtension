@@ -13,6 +13,33 @@ function log(msg, data) {
   }
 }
 
+function createTikTokPathResolver() {
+  return (data, fieldName, path) => {
+    // Handle SIGI_STATE structure where username is a dynamic key
+    if (data.UserModule?.users) {
+      const username = Object.keys(data.UserModule.users)[0];
+      const user = data.UserModule.users[username];
+
+      const fieldMap = {
+        'username': () => user?.uniqueId,
+        'displayName': () => user?.nickname,
+        'bio': () => user?.signature,
+        'followers': () => user?.stats?.followerCount,
+        'following': () => user?.stats?.followingCount,
+        'videoCount': () => user?.stats?.videoCount,
+        'heartCount': () => user?.stats?.heartCount,
+        'verified': () => user?.verified,
+        'profileImage': () => user?.avatarThumb
+      };
+
+      if (fieldMap[fieldName]) {
+        return fieldMap[fieldName]();
+      }
+    }
+    return undefined;
+  };
+}
+
 async function getConfig() {
   const storage = await chrome.storage.sync.get([
     'configIndexUrl', 'cacheTtlMinutes',
@@ -69,15 +96,48 @@ async function getConfig() {
   return { index, platforms };
 }
 
+function extractDom(config) {
+  const result = {};
+  for (const [fieldName, selectorOrFn] of Object.entries(config.selectors || {})) {
+    result[fieldName] = null;
+
+    if (typeof selectorOrFn === 'string') {
+      const element = document.querySelector(selectorOrFn);
+      if (element) {
+        result[fieldName] = element.innerText?.trim() || element.getAttribute('src') || element.getAttribute('href');
+        log(`Found ${fieldName}: "${result[fieldName]?.substring(0, 50)}"`);
+      } else {
+        log(`Selector not found for ${fieldName}: "${selectorOrFn}"`);
+      }
+    } else if (typeof selectorOrFn === 'function') {
+      try {
+        result[fieldName] = selectorOrFn();
+      } catch (e) {
+        log(`Error in custom selector for ${fieldName}:`, e.message);
+      }
+    }
+  }
+  const found = Object.values(result).filter(v => v !== null).length;
+  log(`Extracted ${found}/${Object.keys(config.selectors || {}).length} fields from DOM`);
+  return result;
+}
+
 function extractJsonScript(config) {
-  let scripts;
+  let scripts = [];
+
   if (config.scriptId) {
-    const script = document.getElementById(config.scriptId);
-    if (!script) {
-      log(`Script with ID ${config.scriptId} not found`);
+    const scriptIds = Array.isArray(config.scriptId) ? config.scriptId : [config.scriptId];
+    for (const id of scriptIds) {
+      const script = document.getElementById(id);
+      if (script) {
+        scripts.push(script);
+        log(`Found script with ID: ${id}`);
+      }
+    }
+    if (scripts.length === 0) {
+      log(`No scripts found for IDs: ${scriptIds.join(', ')}`);
       return null;
     }
-    scripts = [script];
   } else if (config.scriptMatch) {
     scripts = Array.from(document.querySelectorAll('script')).filter(s => {
       return s.textContent && s.textContent.includes(config.scriptMatch);
@@ -98,7 +158,13 @@ function extractJsonScript(config) {
       }
       const data = JSON.parse(content);
       log('Parsed JSON from script', { keys: Object.keys(data).slice(0, 3) });
-      return extractFields(data, config.fields);
+
+      let pathResolver = config.pathResolver;
+      if (config.usePathResolver === 'tiktok') {
+        pathResolver = createTikTokPathResolver();
+      }
+
+      return extractFields(data, config.fields, pathResolver);
     } catch (e) {
       log(`Failed to parse script content: ${e.message}`);
       continue;
@@ -107,10 +173,20 @@ function extractJsonScript(config) {
   return null;
 }
 
-function extractFields(data, fields) {
+function extractFields(data, fields, pathResolver) {
   const result = {};
   for (const [fieldName, path] of Object.entries(fields)) {
-    const value = resolvePath(data, path);
+    let value;
+    if (pathResolver && typeof pathResolver === 'function') {
+      try {
+        value = pathResolver(data, fieldName, path);
+      } catch (e) {
+        log(`pathResolver error for ${fieldName}:`, e.message);
+        value = undefined;
+      }
+    } else {
+      value = resolvePath(data, path);
+    }
     result[fieldName] = value ?? null;
   }
   const found = Object.values(result).filter(v => v !== null).length;
@@ -137,7 +213,18 @@ function matchesUrl(pattern, url) {
 }
 
 async function runExtraction(config) {
-  if (config.type === 'json_script') {
+  if (config.type === 'dom') {
+    const data = extractDom(config);
+    if (data && Object.values(data).some(v => v !== null)) {
+      return {
+        platform: config.id,
+        platformLabel: config.label,
+        configVersion: config.version,
+        profileUrl: window.location.href,
+        ...data
+      };
+    }
+  } else if (config.type === 'json_script') {
     const data = extractJsonScript(config);
     if (data) {
       return {
@@ -152,7 +239,7 @@ async function runExtraction(config) {
     return new Promise((resolve) => {
       xhrInterceptCallback = (captured) => {
         if (matchesUrl(config.urlMatch, captured.url)) {
-          const data = extractFields(captured.response, config.fields);
+          const data = extractFields(captured.response, config.fields, config.pathResolver);
           resolve({
             platform: config.id,
             platformLabel: config.label,
@@ -176,6 +263,9 @@ async function initializeExtraction() {
     return;
   }
 
+  const url = window.location.href;
+  log('Checking platforms:', index.platforms.map(p => `${p.id}(${p.active ? 'active' : 'inactive'})`));
+
   for (const entry of index.platforms.filter(p => p.active)) {
     const config = platforms[entry.id];
     if (!config) {
@@ -183,16 +273,30 @@ async function initializeExtraction() {
       continue;
     }
 
-    if (!matchesUrl(config.hostMatch, window.location.href)) {
+    const hostMatches = matchesUrl(config.hostMatch, url);
+    const profileMatches = matchesUrl(config.profileUrlPattern, url);
+
+    log(`Checking ${entry.id}: hostMatch="${config.hostMatch}" (${hostMatches}), profilePattern="${config.profileUrlPattern}" (${profileMatches})`);
+
+    if (!hostMatches) {
       continue;
     }
-    if (!matchesUrl(config.profileUrlPattern, window.location.href)) {
+    if (!profileMatches) {
       continue;
     }
 
     log(`Found matching platform: ${entry.id} (${config.label})`);
 
-    if (config.type === 'json_script') {
+    if (config.type === 'dom') {
+      const result = await runExtraction(config);
+      if (result) {
+        currentExtraction = result;
+        log('Extraction successful', { fields: Object.keys(result) });
+        break;
+      } else {
+        log('dom extraction failed');
+      }
+    } else if (config.type === 'json_script') {
       const result = await runExtraction(config);
       if (result) {
         currentExtraction = result;
@@ -206,7 +310,7 @@ async function initializeExtraction() {
       setupXhrInterception((captured) => {
         if (matchesUrl(config.urlMatch, captured.url)) {
           log('XHR matched, extracting fields');
-          const data = extractFields(captured.response, config.fields);
+          const data = extractFields(captured.response, config.fields, config.pathResolver);
           currentExtraction = {
             platform: config.id,
             platformLabel: config.label,

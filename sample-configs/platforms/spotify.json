@@ -1,0 +1,17 @@
+{
+  "id": "spotify",
+  "label": "Spotify",
+  "version": 1,
+  "hostMatch": "open.spotify.com",
+  "profileUrlPattern": "open.spotify.com/show/",
+  "type": "xhr_intercept",
+  "urlMatch": "api-partner.spotify.com",
+  "fields": {
+    "showName": "data.podcastUnionV2.name",
+    "rating": "data.podcastUnionV2.rating.averageRating.average",
+    "reviewCount": "data.podcastUnionV2.rating.averageRating.count",
+    "episodeCount": "data.podcastUnionV2.totalEpisodeCount",
+    "categories": "data.podcastUnionV2.topics.items.0.title",
+    "description": "data.podcastUnionV2.description"
+  }
+}

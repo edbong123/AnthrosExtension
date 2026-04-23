@@ -24,6 +24,12 @@
       "label": "Facebook",
       "url": "https://raw.githubusercontent.com/yourorg/anthros-scraper-configs/main/platforms/facebook.json",
       "active": false
+    },
+    {
+      "id": "spotify",
+      "label": "Spotify",
+      "url": "https://raw.githubusercontent.com/yourorg/anthros-scraper-configs/main/platforms/spotify.json",
+      "active": true
     }
   ]
 }

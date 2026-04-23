@@ -1,19 +1,20 @@
 {
   "id": "tiktok",
   "label": "TikTok",
-  "version": 4,
+  "version": 5,
   "hostMatch": "tiktok.com",
   "profileUrlPattern": "tiktok.com/@",
   "type": "json_script",
-  "scriptId": "__UNIVERSAL_DATA_FOR_REHYDRATION__",
+  "scriptId": ["SIGI_STATE", "__UNIVERSAL_DATA_FOR_REHYDRATION__"],
+  "usePathResolver": "tiktok",
   "fields": {
-    "username": "__DEFAULT_SCOPE__.webapp.user-detail.userInfo.user.uniqueId",
-    "displayName": "__DEFAULT_SCOPE__.webapp.user-detail.userInfo.user.nickname",
-    "bio": "__DEFAULT_SCOPE__.webapp.user-detail.userInfo.user.signature",
-    "followers": "__DEFAULT_SCOPE__.webapp.user-detail.userInfo.stats.followerCount",
-    "following": "__DEFAULT_SCOPE__.webapp.user-detail.userInfo.stats.followingCount",
-    "videoCount": "__DEFAULT_SCOPE__.webapp.user-detail.userInfo.stats.videoCount",
-    "heartCount": "__DEFAULT_SCOPE__.webapp.user-detail.userInfo.stats.heartCount",
-    "verified": "__DEFAULT_SCOPE__.webapp.user-detail.userInfo.user.verified"
+    "username": "UserModule.users.0.uniqueId",
+    "displayName": "UserModule.users.0.nickname",
+    "bio": "UserModule.users.0.signature",
+    "followers": "UserModule.users.0.stats.followerCount",
+    "following": "UserModule.users.0.stats.followingCount",
+    "videoCount": "UserModule.users.0.stats.videoCount",
+    "heartCount": "UserModule.users.0.stats.heartCount",
+    "verified": "UserModule.users.0.verified"
   }
 }

@@ -29,9 +29,18 @@ async function initSidePanel() {
       return;
     }
 
-    addLog(`Requesting extraction from ${tab[0].url.split('/').slice(0, 3).join('/')}`, 'info');
-    const response = await chrome.tabs.sendMessage(tab[0].id, { action: 'getExtraction' });
-    extraction = response.extraction;
+    const tabUrl = tab[0]?.url || 'unknown';
+    const displayUrl = tabUrl ? tabUrl.split('/').slice(0, 3).join('/') : 'unknown';
+    addLog(`Requesting extraction from ${displayUrl}`, 'info');
+
+    try {
+      const response = await chrome.tabs.sendMessage(tab[0].id, { action: 'getExtraction' });
+      extraction = response.extraction;
+    } catch (e) {
+      addLog(`✗ Content script error: ${e.message}`, 'error');
+      showError(`Content script not loaded. Make sure you're on a creator profile page.`);
+      return;
+    }
 
     if (extraction) {
       addLog(`✓ Extraction found: ${extraction.platform}`, 'success');
