@@ -3,7 +3,7 @@
   "name": "Anthros Creator Saver",
   "version": "1.0.0",
   "description": "Save creator profiles from social platforms directly to Anthros",
-  "permissions": ["activeTab", "storage", "scripting"],
+  "permissions": ["activeTab", "storage", "scripting", "sidePanel"],
   "host_permissions": [
     "https://www.instagram.com/*",
     "https://www.tiktok.com/*",
@@ -14,8 +14,10 @@
   "background": {
     "service_worker": "background.js"
   },
+  "side_panel": {
+    "default_path": "side-panel/side-panel.html"
+  },
   "action": {
-    "default_popup": "popup/popup.html",
     "default_title": "Anthros Creator Saver"
   },
   "options_page": "options/options.html",

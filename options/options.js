@@ -1,11 +1,10 @@
 async function loadSettings() {
   const storage = await chrome.storage.sync.get([
-    'configIndexUrl', 'githubPat', 'cacheTtlMinutes', 'convexUrl',
+    'configIndexUrl', 'cacheTtlMinutes', 'convexUrl',
     'index', 'indexCachedAt', 'platforms'
   ]);
 
   document.getElementById('configIndexUrl').value = storage.configIndexUrl || '';
-  document.getElementById('githubPat').value = storage.githubPat || '';
   document.getElementById('cacheTtlMinutes').value = storage.cacheTtlMinutes || 60;
   document.getElementById('convexUrl').value = storage.convexUrl || '';
 
@@ -93,7 +92,7 @@ async function refreshPlatform(platformId) {
 
   try {
     const storage = await chrome.storage.sync.get([
-      'configIndexUrl', 'githubPat', 'index'
+      'configIndexUrl', 'index'
     ]);
 
     const index = storage.index;
@@ -106,11 +105,7 @@ async function refreshPlatform(platformId) {
       throw new Error('Platform not found in index');
     }
 
-    const headers = storage.githubPat
-      ? { Authorization: `Bearer ${storage.githubPat}` }
-      : {};
-
-    const res = await fetch(entry.url, { headers });
+    const res = await fetch(entry.url, { cache: 'no-store' });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const config = await res.json();
 
@@ -131,18 +126,14 @@ async function refreshIndex() {
 
   try {
     const storage = await chrome.storage.sync.get([
-      'configIndexUrl', 'githubPat'
+      'configIndexUrl'
     ]);
 
     if (!storage.configIndexUrl) {
       throw new Error('Config index URL not set');
     }
 
-    const headers = storage.githubPat
-      ? { Authorization: `Bearer ${storage.githubPat}` }
-      : {};
-
-    const res = await fetch(storage.configIndexUrl, { headers });
+    const res = await fetch(storage.configIndexUrl, { cache: 'no-store' });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const index = await res.json();
 
@@ -161,19 +152,16 @@ async function refreshIndex() {
 document.getElementById('saveSettingsBtn').addEventListener('click', async () => {
   const statusDiv = document.getElementById('status');
   const configIndexUrl = document.getElementById('configIndexUrl').value.trim();
-  const githubPat = document.getElementById('githubPat').value.trim();
   const cacheTtlMinutes = parseInt(document.getElementById('cacheTtlMinutes').value) || 60;
   const convexUrl = document.getElementById('convexUrl').value.trim();
 
   try {
     if (!configIndexUrl) throw new Error('Config index URL is required');
-    if (!convexUrl) throw new Error('Convex URL is required');
 
     await chrome.storage.sync.set({
       configIndexUrl,
-      githubPat,
       cacheTtlMinutes,
-      convexUrl
+      convexUrl: convexUrl || ''
     });
 
     statusDiv.innerHTML = '<div class="status success">Settings saved successfully</div>';
@@ -191,24 +179,20 @@ document.getElementById('refreshNowBtn').addEventListener('click', async () => {
 
   try {
     const storage = await chrome.storage.sync.get([
-      'configIndexUrl', 'githubPat', 'cacheTtlMinutes'
+      'configIndexUrl', 'cacheTtlMinutes'
     ]);
 
     if (!storage.configIndexUrl) {
       throw new Error('Config index URL not set');
     }
 
-    const headers = storage.githubPat
-      ? { Authorization: `Bearer ${storage.githubPat}` }
-      : {};
-
-    const indexRes = await fetch(storage.configIndexUrl, { headers });
+    const indexRes = await fetch(storage.configIndexUrl, { cache: 'no-store' });
     if (!indexRes.ok) throw new Error(`Index HTTP ${indexRes.status}`);
     const index = await indexRes.json();
 
     const platforms = {};
     for (const entry of (index.platforms || []).filter(p => p.active)) {
-      const res = await fetch(entry.url, { headers });
+      const res = await fetch(entry.url, { cache: 'no-store' });
       if (!res.ok) throw new Error(`Platform ${entry.id} HTTP ${res.status}`);
       const config = await res.json();
       platforms[entry.id] = { ...config, cachedAt: Date.now() };

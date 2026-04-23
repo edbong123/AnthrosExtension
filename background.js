@@ -19,7 +19,7 @@ async function saveCreatorProfile(data) {
   const convexUrl = storage.convexUrl;
 
   if (!convexUrl) {
-    throw new Error('Convex URL not configured in extension settings');
+    throw new Error('Convex URL not configured. Go to extension options to set it.');
   }
 
   const standardFields = [

@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+    body {
+      width: 100%;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      margin: 0;
+      padding: 12px;
+      background: #f5f5f5;
+      font-size: 13px;
+    }
+    .container {
+      background: white;
+      border-radius: 8px;
+      padding: 12px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      min-height: 100vh;
+    }
+    h1 {
+      margin: 0 0 12px 0;
+      font-size: 14px;
+      font-weight: 600;
+    }
+    .status {
+      padding: 10px;
+      border-radius: 6px;
+      margin-bottom: 12px;
+      font-size: 12px;
+      line-height: 1.4;
+    }
+    .status.error {
+      background: #fee;
+      color: #c33;
+      border: 1px solid #fcc;
+    }
+    .status.loading {
+      background: #eef;
+      color: #33c;
+      border: 1px solid #ccf;
+    }
+    .status.success {
+      background: #efe;
+      color: #3c3;
+      border: 1px solid #cfc;
+    }
+    .status.info {
+      background: #fff3cd;
+      color: #856404;
+      border: 1px solid #ffc107;
+    }
+    .extraction-status {
+      padding: 10px;
+      border-radius: 4px;
+      margin-bottom: 12px;
+      background: #f0f0f0;
+      border-left: 3px solid #999;
+    }
+    .extraction-status.found {
+      background: #f0f8f0;
+      border-left-color: #3c3;
+    }
+    .extraction-status.not-found {
+      background: #f8f0f0;
+      border-left-color: #c33;
+    }
+    .field-group {
+      margin-bottom: 10px;
+      display: flex;
+      flex-direction: column;
+    }
+    label {
+      font-size: 11px;
+      font-weight: 600;
+      color: #666;
+      margin-bottom: 3px;
+    }
+    input, textarea {
+      font-size: 12px;
+      padding: 6px;
+      border: 1px solid #ddd;
+      border-radius: 3px;
+      font-family: monospace;
+    }
+    input:disabled, textarea:disabled {
+      background: #f0f0f0;
+      color: #999;
+    }
+    textarea {
+      min-height: 50px;
+      resize: vertical;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, monospace;
+    }
+    .buttons {
+      display: flex;
+      gap: 6px;
+      margin-top: 12px;
+      flex-wrap: wrap;
+    }
+    button {
+      padding: 8px 10px;
+      border: none;
+      border-radius: 3px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: opacity 0.2s;
+      flex: 1;
+      min-width: 80px;
+    }
+    button:hover {
+      opacity: 0.9;
+    }
+    button:active {
+      opacity: 0.8;
+    }
+    .btn-primary {
+      background: #007bff;
+      color: white;
+    }
+    .btn-secondary {
+      background: #ddd;
+      color: #333;
+    }
+    .btn-small {
+      flex: 0 1 auto;
+      padding: 6px 8px;
+      font-size: 11px;
+    }
+    .btn-primary:disabled, .btn-secondary:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+    .log {
+      background: #f0f0f0;
+      border: 1px solid #ddd;
+      border-radius: 3px;
+      padding: 8px;
+      max-height: 150px;
+      overflow-y: auto;
+      font-size: 11px;
+      font-family: monospace;
+      margin-top: 12px;
+      line-height: 1.3;
+    }
+    .log-entry {
+      margin: 2px 0;
+      padding: 2px 0;
+    }
+    .log-entry.error {
+      color: #c33;
+    }
+    .log-entry.success {
+      color: #3c3;
+    }
+    .log-entry.info {
+      color: #33c;
+    }
+    .divider {
+      border-top: 1px solid #ddd;
+      margin: 12px 0;
+    }
+    .config-link {
+      font-size: 11px;
+      text-align: center;
+      margin-top: 12px;
+    }
+    .config-link a {
+      color: #007bff;
+      text-decoration: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>📊 Creator Scraper</h1>
+    <div id="status"></div>
+    <div id="extractionStatus"></div>
+    <div id="form"></div>
+    <div class="buttons">
+      <button class="btn-secondary btn-small" id="refreshBtn">Refresh</button>
+      <button class="btn-primary" id="saveBtn">Save</button>
+    </div>
+    <div class="log" id="log"></div>
+    <div class="divider"></div>
+    <div class="config-link">
+      <a href="#" id="optionsLink">Settings</a>
+    </div>
+  </div>
+  <script src="side-panel.js"></script>
+</body>
+</html>

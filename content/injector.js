@@ -15,7 +15,7 @@ function log(msg, data) {
 
 async function getConfig() {
   const storage = await chrome.storage.sync.get([
-    'configIndexUrl', 'githubPat', 'cacheTtlMinutes',
+    'configIndexUrl', 'cacheTtlMinutes',
     'index', 'indexCachedAt', 'platforms'
   ]);
 
@@ -25,9 +25,6 @@ async function getConfig() {
   }
 
   const ttl = (storage.cacheTtlMinutes ?? 60) * 60 * 1000;
-  const headers = storage.githubPat
-    ? { Authorization: `Bearer ${storage.githubPat}` }
-    : {};
 
   let index = storage.index;
   const indexAge = Date.now() - (storage.indexCachedAt ?? 0);
@@ -35,7 +32,7 @@ async function getConfig() {
   if (!index || indexAge > ttl) {
     try {
       log('Fetching fresh index from', storage.configIndexUrl);
-      const res = await fetch(storage.configIndexUrl, { headers, cache: 'no-store' });
+      const res = await fetch(storage.configIndexUrl, { cache: 'no-store' });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       index = await res.json();
       await chrome.storage.sync.set({ index, indexCachedAt: Date.now() });
@@ -55,7 +52,7 @@ async function getConfig() {
     if (!cached || age > ttl) {
       try {
         log(`Fetching platform config: ${entry.id}`);
-        const res = await fetch(entry.url, { headers, cache: 'no-store' });
+        const res = await fetch(entry.url, { cache: 'no-store' });
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const config = await res.json();
         platforms[entry.id] = { ...config, cachedAt: Date.now() };
