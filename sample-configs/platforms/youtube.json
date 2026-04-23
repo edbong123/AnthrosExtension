@@ -1,7 +1,7 @@
 {
   "id": "youtube",
   "label": "YouTube",
-  "version": 3,
+  "version": 4,
   "hostMatch": "youtube.com",
   "profileUrlPattern": "youtube.com/@",
   "type": "json_script",
@@ -9,9 +9,11 @@
   "scriptMatch": "var ytInitialData",
   "scriptClean": "var ytInitialData = ",
   "fields": {
-    "username": "header.c4TabbedHeaderRenderer.channelHandleText.runs.0.text",
-    "displayName": "header.c4TabbedHeaderRenderer.title.runs.0.text",
-    "subscribers": "header.c4TabbedHeaderRenderer.subscriberCountText.simpleText",
-    "videoCount": "header.c4TabbedHeaderRenderer.videosCountText.runs.0.text"
+    "username": "header.pageHeaderRenderer.content.pageHeaderViewModel.metadata.contentMetadataViewModel.metadataRows.0.metadataParts.0.text.content",
+    "displayName": "metadata.channelMetadataRenderer.title",
+    "bio": "metadata.channelMetadataRenderer.description",
+    "subscribers": "header.pageHeaderRenderer.content.pageHeaderViewModel.metadata.contentMetadataViewModel.metadataRows.1.metadataParts.0.text.content",
+    "videoCount": "header.pageHeaderRenderer.content.pageHeaderViewModel.metadata.contentMetadataViewModel.metadataRows.1.metadataParts.1.text.content",
+    "channelId": "metadata.channelMetadataRenderer.externalId"
   }
 }
