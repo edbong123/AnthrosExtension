@@ -2,7 +2,7 @@
 
 ## Project Overview
 
-**AnthrosExtension** is a Chrome extension (Manifest V3) that scrapes creator profile data from social platforms (TikTok, YouTube, Instagram, Facebook) and saves it to the Anthros Convex database. Extraction logic is driven by remote JSON config files hosted on GitHub, so scraping rules can be updated without redeploying the extension.
+**Anthros Chrome Extension** is a Chrome extension (Manifest V3) that scrapes creator profile data from social platforms (TikTok, YouTube, Instagram, Facebook) and saves it to the Anthros Convex database. Extraction logic is driven by remote JSON config files hosted on GitHub, so scraping rules can be updated without redeploying the extension.
 
 **Stack:** Vanilla JavaScript, Chrome Extension APIs (MV3), Convex HTTP Actions, GitHub-hosted JSON configs.
 
